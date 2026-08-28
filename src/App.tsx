@@ -102,6 +102,7 @@ const MainLayout = () => {
       type: 'group' as const,
       label: <span style={{ color: 'var(--color-accent)', fontSize: '12px' }}>⚙️ 설정</span>,
       children: [
+        { key: '/api-settings', icon: <SettingOutlined />, label: '학교 API 설정', onClick: () => setIsSettingsOpen(true) },
         { key: '/templates', icon: <ProfileOutlined />, label: <Link to="/templates">템플릿 등록</Link> },
         { key: '/rates', icon: <SettingOutlined />, label: <Link to="/rates">단가 설정</Link> },
       ]
@@ -133,11 +134,6 @@ const MainLayout = () => {
       <Layout>
         <Header style={{ background: 'var(--color-bg)', padding: '0 16px', display: 'flex', alignItems: 'center', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', justifyContent: 'space-between' }}>
           <Title level={4} style={{ margin: 0, color: 'var(--color-primary)' }}>AI 스마트 기안 폼</Title>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Button type="text" icon={<SettingOutlined />} onClick={() => setIsSettingsOpen(true)}>
-              설정
-            </Button>
-          </div>
         </Header>
         <Content style={{ margin: '16px', background: 'var(--color-bg)', borderRadius: '8px', minHeight: 280, boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
           <Routes>

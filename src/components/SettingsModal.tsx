@@ -87,7 +87,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <Modal
-      title={<Title level={4} style={{ margin: 0, color: '#1E3A8A' }}>⚙️ 설정 및 API 키 등록</Title>}
+      title={<Title level={4} style={{ margin: 0, color: '#1E3A8A' }}>⚙️ 학교 API 설정</Title>}
       open={open}
       onCancel={onClose}
       footer={null}
