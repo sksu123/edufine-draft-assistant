@@ -120,7 +120,7 @@ const MainLayout = () => {
       >
         <div style={{ padding: '24px', textAlign: 'center' }}>
           <Title level={3} style={{ color: 'white', margin: 0, letterSpacing: '1px' }}>{schoolName}</Title>
-          <Text style={{ color: 'var(--color-accent)', fontSize: '13px' }}>품의 작성 도우미</Text>
+          <Text style={{ color: 'var(--color-accent)', fontSize: '13px' }}>어려운 품의, AI로 뚝딱!</Text>
         </div>
         <Menu 
           theme="dark" 
@@ -133,7 +133,7 @@ const MainLayout = () => {
       
       <Layout>
         <Header style={{ background: 'var(--color-bg)', padding: '0 16px', display: 'flex', alignItems: 'center', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', justifyContent: 'space-between' }}>
-          <Title level={4} style={{ margin: 0, color: 'var(--color-primary)' }}>AI 스마트 기안 폼</Title>
+          <Title level={4} style={{ margin: 0, color: 'var(--color-primary)' }}>품의뚝딱</Title>
         </Header>
         <Content style={{ margin: '16px', background: 'var(--color-bg)', borderRadius: '8px', minHeight: 280, boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
           <Routes>
