@@ -339,8 +339,14 @@ export const InstructorFee = () => {
           <Text type="secondary">동일 강사가 여러 날에 걸쳐 출강할 경우, 이름 아래의 [강의일 추가] 버튼을 눌러 일차별로 개별 행을 관리하세요.</Text>
         </div>
 
-        <Button type="dashed" block icon={<PlusOutlined />} onClick={handleAddInstructor} style={{ marginBottom: 16 }}>
-          새 강사 추가하기
+        <Button 
+          type="primary" 
+          block 
+          icon={<PlusOutlined />} 
+          onClick={handleAddInstructor} 
+          style={{ marginBottom: 16, height: '48px', fontSize: '15px', backgroundColor: '#38BDF8', color: '#12304A', fontWeight: 'bold', border: 'none' }}
+        >
+          + 새 강사 추가하기
         </Button>
 
         <Table 
