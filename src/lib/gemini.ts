@@ -121,12 +121,12 @@ const parseJsonResponse = (text: string | undefined) => {
 
 const SIMPLE_PURCHASE_PROMPT = `
 당신은 학교 행정실의 데이터 추출 전문 AI입니다.
-업로드된 이미지는 교사가 제출한 '단순 물품 품의'를 위한 장바구니 혹은 견적서 스크린샷입니다.
-이미지의 전체 문맥을 분석하여 구매할 물품의 목록을 추출하세요.
+입력된 자료는 교사가 제출한 '단순 물품 품의'를 위한 장바구니/견적서 스크린샷이거나 복사된 텍스트/표 데이터입니다.
+자료의 전체 문맥을 분석하여 구매할 물품의 목록을 추출하세요.
 
 [필수 규칙 - 절대 위반 금지]
-1. 사칙연산(단가 합산, 총액 계산, 부가세 연산 등)을 절대 하지 마세요. 오직 문서에 명시된 숫자만 그대로 추출하세요. 계산은 우리 시스템이 자바스크립트로 처리합니다.
-2. 문맥상 '상품명', '옵션/규격', '수량', '주문금액(또는 상품금액)', '배송비'를 발라내세요. 화면 전체 결제 요약에 표시된 '총 배송비'가 있다면 첫 번째 품목의 배송비 항목에 넣거나, 품목별로 기재된 배송비 숫자를 정확히 추출하세요. 만약 배송비 텍스트가 없으면 0을 넣으세요.
+1. 사칙연산(단가 합산, 총액 계산, 부가세 연산 등)을 절대 하지 마세요. 오직 문서/자료에 명시된 숫자만 그대로 추출하세요. 계산은 우리 시스템이 자바스크립트로 처리합니다.
+2. 문맥상 '상품명', '옵션/규격', '수량', '주문금액(또는 상품금액)', '배송비'를 발라내세요. 전체 결제 요약에 표시된 '총 배송비'가 있다면 첫 번째 품목의 배송비 항목에 넣거나, 품목별로 기재된 배송비 숫자를 정확히 추출하세요. 배송비 정보가 없으면 0을 넣으세요.
 
 [옵션 구분 - 매우 중요]
 3. 같은 상품을 옵션(색상/사이즈/종류 등)만 다르게 여러 개 담은 경우, 옵션마다 별도의 항목으로 각각 추출하세요. 절대 하나로 합치지 마세요.
@@ -148,6 +148,19 @@ export async function extractItemsFromImage(files: File[]) {
     const response = await ai.models.generateContent({
       model: MODEL_ID,
       contents: [SIMPLE_PURCHASE_PROMPT, ...imageParts],
+      config: { ...EXTRACTION_CONFIG, responseSchema: SIMPLE_PURCHASE_SCHEMA },
+    });
+
+    return parseJsonResponse(response.text);
+  });
+}
+
+export async function extractItemsFromText(text: string) {
+  const ai = getGenAI();
+  return geminiQueue.enqueue(async () => {
+    const response = await ai.models.generateContent({
+      model: MODEL_ID,
+      contents: [SIMPLE_PURCHASE_PROMPT, text],
       config: { ...EXTRACTION_CONFIG, responseSchema: SIMPLE_PURCHASE_SCHEMA },
     });
 

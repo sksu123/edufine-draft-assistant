@@ -291,15 +291,14 @@ export const ContractPurchase = () => {
     <div style={{ padding: '32px' }}>
       <BudgetSelector plannedAmount={grandTotal} />
       <Card
-        title={<Title level={4} style={{ margin: 0, color: '#1E3A8A' }}>📑 견적서 계약 품의 (부가세 연동형)</Title>}
-        style={{ borderColor: '#1E3A8A' }}
+        title={<Title level={4} style={{ margin: 0, color: 'var(--color-primary)' }}>📑 견적서 계약 품의 (부가세 연동형)</Title>}
+        style={{ borderColor: 'var(--color-primary)' }}
         extra={
           <Button
             type="primary"
             icon={<DownloadOutlined />}
             onClick={() => exportItemsToExcel(items)}
             disabled={items.length === 0}
-            style={{ background: '#3f8600' }}
           >
             엑셀(.xlsx) 다운로드
           </Button>
@@ -315,7 +314,7 @@ export const ContractPurchase = () => {
                     alt="preview"
                     style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'contain', borderRadius: '4px' }}
                   />
-                  <p style={{ marginTop: 12, color: '#1E3A8A', fontWeight: 'bold' }}>
+                  <p style={{ marginTop: 12, color: 'var(--color-primary)', fontWeight: 'bold' }}>
                     총 {fileList.length}장의 이미지 업로드 됨
                   </p>
                   <p style={{ fontSize: '12px', color: '#666' }}>
@@ -324,7 +323,7 @@ export const ContractPurchase = () => {
                 </div>
               ) : fileList.length > 0 ? (
                 <div style={{ padding: '16px 0' }}>
-                  <p style={{ color: '#1E3A8A', fontWeight: 'bold' }}>
+                  <p style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>
                     총 {fileList.length}개의 파일 업로드 됨
                   </p>
                   <p style={{ fontSize: '12px', color: '#666' }}>
@@ -333,8 +332,8 @@ export const ContractPurchase = () => {
                 </div>
               ) : (
                 <>
-                  <p className="ant-upload-drag-icon"><FilePdfOutlined style={{ color: '#1E3A8A' }} /></p>
-                  <p className="ant-upload-text">견적서를 드래그하거나<br /><strong style={{ color: '#1E3A8A' }}>Ctrl+V (붙여넣기)</strong>로 추가하세요</p>
+                  <p className="ant-upload-drag-icon"><FilePdfOutlined style={{ color: 'var(--color-primary)' }} /></p>
+                  <p className="ant-upload-text">견적서를 드래그하거나<br /><strong style={{ color: 'var(--color-primary)' }}>Ctrl+V (붙여넣기)</strong>로 추가하세요</p>
                   <p className="ant-upload-hint" style={{ fontSize: '12px' }}>비정형 문서의 문맥을 읽어 항목을 추출합니다.</p>
                 </>
               )}
@@ -344,7 +343,7 @@ export const ContractPurchase = () => {
               icon={<ScanOutlined />}
               block
               size="large"
-              style={{ marginTop: 16, background: '#1E3A8A' }}
+              style={{ marginTop: '16px', height: '54px', fontSize: '16px', fontWeight: 'bold' }}
               onClick={handleScan}
               loading={isScanning}
               disabled={fileList.length === 0}
@@ -401,7 +400,7 @@ export const ContractPurchase = () => {
                 <Col>
                   <div style={{ textAlign: 'right' }}>
                     <Text style={{ fontSize: 14, marginRight: 8 }}>계약(지출) 예정 총액:</Text>
-                    <Text strong style={{ fontSize: 24, color: '#1E3A8A' }}>
+                    <Text strong style={{ fontSize: 24, color: 'var(--color-primary)' }}>
                       {grandTotal.toLocaleString()}원
                     </Text>
                   </div>
@@ -414,7 +413,7 @@ export const ContractPurchase = () => {
               size="large"
               block
               icon={<SaveOutlined />}
-              style={{ marginTop: 16, background: '#1E3A8A' }}
+              style={{ marginTop: 16, height: '54px', fontSize: '16px', fontWeight: 'bold' }}
               disabled={items.length === 0}
               onClick={handleSave}
             >

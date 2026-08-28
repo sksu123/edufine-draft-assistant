@@ -368,7 +368,7 @@ export const InstructorFee = () => {
           size="large" 
           block 
           icon={<SaveOutlined />}
-          style={{ marginTop: 16, background: '#3f8600' }}
+          style={{ marginTop: 16, height: '54px', fontSize: '16px', fontWeight: 'bold' }}
           disabled={instructors.length === 0}
           onClick={handleSave}
         >

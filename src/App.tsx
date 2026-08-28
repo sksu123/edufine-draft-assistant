@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, Typography, Menu } from 'antd';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { ShoppingCartOutlined, UsergroupAddOutlined, FilePdfOutlined, SettingOutlined, WalletOutlined, ProfileOutlined } from '@ant-design/icons';
+import { ShoppingCartOutlined, UsergroupAddOutlined, FilePdfOutlined, SettingOutlined, WalletOutlined, ProfileOutlined, ReadOutlined } from '@ant-design/icons';
 import './index.css';
 import { SimplePurchase } from './pages/SimplePurchase';
 import { InstructorFee } from './pages/InstructorFee';
@@ -9,6 +9,7 @@ import { ContractPurchase } from './pages/ContractPurchase';
 import { BudgetManager } from './pages/BudgetManager';
 import { TemplateManager } from './pages/TemplateManager';
 import { RateSettings } from './pages/RateSettings';
+import { UserGuide } from './pages/UserGuide';
 import { SettingsModal } from './components/SettingsModal';
 
 const { Header, Content, Sider } = Layout;
@@ -35,6 +36,14 @@ const edufineTheme = {
     }
   },
 };
+
+const PoomiIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px', verticalAlign: 'text-bottom', color: '#F7FCFF' }}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+    <polyline points="14 2 14 8 20 8"></polyline>
+    <path d="M13 12l-3 5h4l-1 5 5-6h-4l1-4z" fill="#38BDF8" stroke="#38BDF8"></path>
+  </svg>
+);
 
 const MainLayout = () => {
   const location = useLocation();
@@ -106,6 +115,7 @@ const MainLayout = () => {
       type: 'group' as const,
       label: <span style={{ color: 'var(--color-accent)', fontSize: '12px' }}>⚙️ 설정</span>,
       children: [
+        { key: '/guide', icon: <ReadOutlined />, label: <Link to="/guide">사용설명서</Link> },
         { key: '/api-settings', icon: <SettingOutlined />, label: '학교 API 설정', onClick: () => setIsSettingsOpen(true) },
         { key: '/templates', icon: <ProfileOutlined />, label: <Link to="/templates">템플릿 등록</Link> },
         { key: '/rates', icon: <SettingOutlined />, label: <Link to="/rates">단가 설정</Link> },
@@ -123,7 +133,10 @@ const MainLayout = () => {
         collapsedWidth="0"
       >
         <div style={{ padding: '24px', textAlign: 'center' }}>
-          <Title level={3} style={{ color: 'white', margin: 0, letterSpacing: '1px' }}>{schoolName}</Title>
+          <Title level={3} style={{ color: 'white', margin: 0, letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <PoomiIcon />
+            품의뚝딱
+          </Title>
           <Text style={{ color: 'var(--color-accent)', fontSize: '13px' }}>어려운 품의, AI로 뚝딱!</Text>
         </div>
         <Menu 
@@ -137,7 +150,7 @@ const MainLayout = () => {
       
       <Layout>
         <Header style={{ background: 'var(--color-bg)', padding: '0 16px', display: 'flex', alignItems: 'center', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', justifyContent: 'space-between' }}>
-          <Title level={4} style={{ margin: 0, color: 'var(--color-primary)' }}>품의뚝딱</Title>
+          <Title level={4} style={{ margin: 0, color: 'var(--color-primary)' }}>{schoolName}</Title>
         </Header>
         <Content style={{ margin: '16px', background: 'var(--color-bg)', borderRadius: '8px', minHeight: 280, boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
           <Routes>
@@ -147,6 +160,7 @@ const MainLayout = () => {
             <Route path="/budget" element={<BudgetManager />} />
             <Route path="/templates" element={<TemplateManager />} />
             <Route path="/rates" element={<RateSettings />} />
+            <Route path="/guide" element={<UserGuide />} />
             <Route path="*" element={<SimplePurchase />} />
           </Routes>
         </Content>

@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react';
-import { Card, Typography, Upload, Button, Table, InputNumber, Input, Row, Col, message, Tag, Tooltip, Modal } from 'antd';
-import { InboxOutlined, ScanOutlined, SaveOutlined, DownloadOutlined, PlusOutlined, MergeCellsOutlined } from '@ant-design/icons';
+import { Card, Typography, Upload, Button, Table, InputNumber, Input, Row, Col, message, Tag, Tooltip, Modal, Divider } from 'antd';
+import { SaveOutlined, DownloadOutlined, PlusOutlined, MergeCellsOutlined } from '@ant-design/icons';
 import { DraftGeneratorModal } from '../components/DraftGeneratorModal';
 import { BudgetSelector } from '../components/BudgetSelector';
-import { extractItemsFromImage } from '../lib/gemini';
+import { extractItemsFromImage, extractItemsFromText } from '../lib/gemini';
 import { exportItemsToExcel } from '../lib/excelExport';
 import { budgetStore } from '../lib/budgetStore';
 import { useScanUpload } from '../hooks/useScanUpload';
 import { useBudget } from '../hooks/useBudget';
 import { useDraftGuard, buildSignature } from '../hooks/useDraftGuard';
+import * as XLSX from 'xlsx';
 
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
@@ -32,13 +33,15 @@ const toInt = (value: unknown, fallback: number) => {
 };
 
 /** 품명+규격 기준 중복 판별 키 */
-const dupKey = (item: RequestItem) => `${item.item_name.trim()}${item.specification.trim()}`;
+const dupKey = (item: RequestItem) => `${item.item_name.trim()} ${item.specification.trim()}`;
 /** 병합 가능 키: 단가까지 같아야 수량 합산이 금액을 바꾸지 않는다 */
-const mergeKey = (item: RequestItem) => `${dupKey(item)}${item.unit_price}`;
+const mergeKey = (item: RequestItem) => `${dupKey(item)} ${item.unit_price}`;
 
 export const SimplePurchase = () => {
   const [items, setItems] = useState<RequestItem[]>([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [isTextScanning, setIsTextScanning] = useState(false);
+  const [textInput, setTextInput] = useState('');
   const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
   const { fileList, uploadProps, previewUrl, getFiles } = useScanUpload();
   const { selectedItem } = useBudget();
@@ -70,6 +73,46 @@ export const SimplePurchase = () => {
     return removable;
   }, [items]);
 
+  const processExtractedItems = (parsedItems: any) => {
+    const initializedItems: RequestItem[] = [];
+    let totalShippingFee = 0;
+
+    (parsedItems as unknown[]).forEach((raw, index: number) => {
+      const item = raw as Record<string, unknown>;
+      const qty = Math.max(1, toInt(item.quantity, 1));
+      const orderPrice = toInt(item.order_price, 0);
+
+      const rawUnitPrice = orderPrice / qty;
+      const unitPrice = Math.ceil((rawUnitPrice * 1.05) / 100) * 100;
+
+      const fee = toInt(item.shipping_fee, 0);
+      if (fee > 0) totalShippingFee += fee;
+
+      initializedItems.push({
+        id: `${Date.now()}-${index}`,
+        item_name: typeof item.name === 'string' && item.name ? item.name : '품명 미상',
+        specification: typeof item.specification === 'string' ? item.specification : '',
+        quantity: qty,
+        unit_price: unitPrice,
+        amount: qty * unitPrice,
+      });
+    });
+
+    if (totalShippingFee > 0) {
+      initializedItems.push({
+        id: `${Date.now()}-shipping`,
+        item_name: '배송비',
+        specification: '',
+        quantity: 1,
+        unit_price: totalShippingFee,
+        amount: totalShippingFee,
+      });
+    }
+
+    setItems(initializedItems);
+    message.success('분석 결과를 바탕으로 표를 구성했습니다! 내역을 확인하고 수정해주세요.');
+  };
+
   const handleScan = async () => {
     if (fileList.length === 0) {
       message.warning('장바구니 이미지를 1장 이상 업로드해주세요.');
@@ -87,51 +130,66 @@ export const SimplePurchase = () => {
         return;
       }
       const parsedItems = await extractItemsFromImage(files);
-
-      const initializedItems: RequestItem[] = [];
-      let totalShippingFee = 0;
-
-      (parsedItems as unknown[]).forEach((raw, index: number) => {
-        const item = raw as Record<string, unknown>;
-        const qty = Math.max(1, toInt(item.quantity, 1));
-        const orderPrice = toInt(item.order_price, 0);
-
-        const rawUnitPrice = orderPrice / qty;
-        // 가격 변동성 반영: 5% 할증 후 100원 단위 올림
-        const unitPrice = Math.ceil((rawUnitPrice * 1.05) / 100) * 100;
-
-        const fee = toInt(item.shipping_fee, 0);
-        if (fee > 0) totalShippingFee += fee;
-
-        initializedItems.push({
-          id: `${Date.now()}-${index}`,
-          item_name: typeof item.name === 'string' && item.name ? item.name : '품명 미상',
-          specification: typeof item.specification === 'string' ? item.specification : '',
-          quantity: qty,
-          unit_price: unitPrice,
-          amount: qty * unitPrice,
-        });
-      });
-
-      if (totalShippingFee > 0) {
-        initializedItems.push({
-          id: `${Date.now()}-shipping`,
-          item_name: '배송비',
-          specification: '',
-          quantity: 1,
-          unit_price: totalShippingFee,
-          amount: totalShippingFee,
-        });
-      }
-
-      setItems(initializedItems);
-      message.success('여러 장의 영수증 분석 결과를 하나로 병합 완료! 표를 확인하고 수정해주세요.');
+      processExtractedItems(parsedItems);
     } catch (error) {
       console.error(error);
       const reason = error instanceof Error ? error.message : '';
       message.error(reason || '이미지 분석에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsScanning(false);
+    }
+  };
+
+  const handleTextScan = async () => {
+    if (!textInput.trim()) {
+      message.warning('텍스트를 입력해주세요.');
+      return;
+    }
+    setIsTextScanning(true);
+    message.info('텍스트를 AI로 분석합니다...');
+    try {
+      const parsedItems = await extractItemsFromText(textInput);
+      processExtractedItems(parsedItems);
+    } catch (error) {
+      console.error(error);
+      const reason = error instanceof Error ? error.message : '';
+      message.error(reason || '텍스트 분석에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsTextScanning(false);
+    }
+  };
+
+  const excelUploadProps = {
+    accept: '.xlsx,.xls',
+    showUploadList: false,
+    beforeUpload: (file: File) => {
+      message.info('엑셀 파일을 읽고 분석합니다...');
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const csv = XLSX.utils.sheet_to_csv(worksheet);
+          
+          if (!csv.trim()) {
+            message.warning('엑셀 파일에 데이터가 없습니다.');
+            return;
+          }
+          
+          const parsedItems = await extractItemsFromText(csv);
+          processExtractedItems(parsedItems);
+        } catch (error) {
+          console.error(error);
+          message.error('엑셀 파일 분석에 실패했습니다.');
+        }
+      };
+      reader.onerror = () => {
+        message.error('파일을 읽는 중 오류가 발생했습니다.');
+      };
+      reader.readAsArrayBuffer(file);
+      return false; // Prevent auto upload
     }
   };
 
@@ -293,7 +351,6 @@ export const SimplePurchase = () => {
               icon={<DownloadOutlined />}
               onClick={() => exportItemsToExcel(items)}
               disabled={items.length === 0}
-              style={{ background: '#3f8600' }}
             >
               엑셀(.xlsx) 다운로드
             </Button>
@@ -301,59 +358,96 @@ export const SimplePurchase = () => {
         }
         style={{ borderColor: '#1E3A8A' }}
       >
-        <Row gutter={[16, 16]}>
-          <Col xs={24} lg={8}>
-            <Dragger {...uploadProps} showUploadList={false}>
-              {previewUrl ? (
-                <div style={{ padding: '16px 0' }}>
-                  <img
-                    src={previewUrl}
-                    alt="preview"
-                    style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'contain', borderRadius: '4px' }}
-                  />
-                  <p style={{ marginTop: 12, color: '#1E3A8A', fontWeight: 'bold' }}>
-                    총 {fileList.length}장의 이미지 업로드 됨
-                  </p>
-                  <p style={{ fontSize: '12px', color: '#666' }}>
-                    (클릭하거나 드래그하여 파일 다시 선택)
-                  </p>
+        <div style={{ marginBottom: 24 }}>
+          <Title level={5} style={{ marginBottom: 16 }}>자료 넣기</Title>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={12}>
+              <Card title={<span style={{ fontWeight: 'bold' }}>이미지 업로드</span>} size="small" type="inner" style={{ height: '100%' }}>
+                <Text type="secondary" style={{ display: 'block', marginBottom: 12, fontSize: '13px' }}>
+                  장바구니 캡처를 올리거나 Ctrl+V로 붙여넣으면 Gemini가 품목을 읽어옵니다.
+                </Text>
+                <Dragger {...uploadProps} showUploadList={false}>
+                  {previewUrl ? (
+                    <div style={{ padding: '8px 0' }}>
+                      <img
+                        src={previewUrl}
+                        alt="preview"
+                        style={{ maxWidth: '100%', maxHeight: '100px', objectFit: 'contain', borderRadius: '4px' }}
+                      />
+                      <p style={{ marginTop: 8, color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '13px' }}>
+                        총 {fileList.length}장의 이미지 업로드 됨
+                      </p>
+                    </div>
+                  ) : fileList.length > 0 ? (
+                    <div style={{ padding: '16px 0' }}>
+                      <p style={{ color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '13px' }}>
+                        총 {fileList.length}개의 파일 업로드 됨
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{ padding: '8px 0' }}>
+                      <p style={{ color: '#595959', fontWeight: 'bold', fontSize: '14px', marginBottom: 4 }}>
+                        + 캡처 이미지 업로드 또는 붙여넣기
+                      </p>
+                      <p style={{ color: '#8c8c8c', fontSize: '12px', margin: 0 }}>
+                        여러 장 가능 • 최대 6장
+                      </p>
+                    </div>
+                  )}
+                </Dragger>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 16 }}>
+                  <Button
+                    type="default"
+                    onClick={handleScan}
+                    loading={isScanning}
+                    disabled={fileList.length === 0}
+                    style={{ fontWeight: 'bold' }}
+                  >
+                    Gemini로 캡처 분석하기
+                  </Button>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {fileList.length > 0 ? '준비 완료! 분석을 시작하세요.' : '이미지를 넣으면 분석을 시작할 수 있어요.'}
+                  </Text>
                 </div>
-              ) : fileList.length > 0 ? (
-                <div style={{ padding: '16px 0' }}>
-                  <p style={{ color: '#1E3A8A', fontWeight: 'bold' }}>
-                    총 {fileList.length}개의 파일 업로드 됨
-                  </p>
-                  <p style={{ fontSize: '12px', color: '#666' }}>
-                    (클릭하거나 드래그하여 파일 다시 선택)
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <p className="ant-upload-drag-icon"><InboxOutlined style={{ color: '#1E3A8A' }} /></p>
-                  <p className="ant-upload-text">장바구니 캡처 이미지를 올리거나<br /><strong style={{ color: '#1E3A8A' }}>Ctrl+V (붙여넣기)</strong> 하세요</p>
-                </>
-              )}
-            </Dragger>
-            <div style={{ marginTop: '16px', padding: '16px', background: '#f0fdf4', border: '1px solid #16a34a', borderRadius: '8px' }}>
-              <Text type="secondary" style={{ display: 'block', marginBottom: '8px', color: '#166534', fontWeight: 'bold' }}>
-                ✅ AI 항목 자동 추출 기능이 준비되었습니다!
-              </Text>
-              <Button
-                type="primary"
-                icon={<ScanOutlined />}
-                block
-                size="large"
-                style={{ background: '#1E3A8A', height: '50px', fontSize: '16px' }}
-                onClick={handleScan}
-                loading={isScanning}
-                disabled={fileList.length === 0}
-              >
-                AI 스캔 시작 (총 {fileList.length}장 병합)
-              </Button>
-            </div>
-          </Col>
+              </Card>
+            </Col>
 
-          <Col xs={24} lg={16}>
+            <Col xs={24} lg={12}>
+              <Card title={<span style={{ fontWeight: 'bold' }}>텍스트 붙여넣기</span>} size="small" type="inner" style={{ height: '100%' }}>
+                <Text type="secondary" style={{ display: 'block', marginBottom: 12, fontSize: '13px' }}>
+                  쇼핑몰에서 복사한 텍스트를 붙여넣으면 Gemini가 품목으로 정리합니다.
+                </Text>
+                <Input.TextArea 
+                  rows={4} 
+                  placeholder="예:&#10;A4 복사용지 80g 1박스 24,900원&#10;클리어파일 40매 3개 12,600원"
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  style={{ marginBottom: 12 }}
+                />
+                <Button type="default" onClick={handleTextScan} loading={isTextScanning} style={{ fontWeight: 'bold' }}>
+                  Gemini로 텍스트 분석하기
+                </Button>
+                
+                <Divider style={{ margin: '16px 0', fontSize: 12, color: '#8c8c8c' }}>또는 엑셀로 정리했다면?</Divider>
+                
+                <Dragger {...excelUploadProps}>
+                  <div style={{ padding: '4px 0' }}>
+                    <p style={{ color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '14px', marginBottom: 4 }}>
+                      ↑ 엑셀 파일 업로드 (.xlsx • .xls)
+                    </p>
+                    <p style={{ color: '#8c8c8c', fontSize: '12px', margin: 0 }}>
+                      팀별 정리 파일, 물품신청서 등 어떤 양식이든
+                    </p>
+                  </div>
+                </Dragger>
+              </Card>
+            </Col>
+          </Row>
+        </div>
+
+        <Row>
+          <Col xs={24}>
             <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <Text strong style={{ color: '#cf1322' }}>※ AI 추출 결과입니다. 내역을 확인하고 직접 수정하세요.</Text>
               {mergeableCount > 0 && (
@@ -385,7 +479,7 @@ export const SimplePurchase = () => {
               size="large"
               block
               icon={<SaveOutlined />}
-              style={{ marginTop: 16, background: '#3f8600' }}
+              style={{ marginTop: 16, height: '54px', fontSize: '16px', fontWeight: 'bold' }}
               disabled={items.length === 0}
               onClick={handleSave}
             >
