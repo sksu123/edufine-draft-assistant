@@ -346,7 +346,7 @@ export const InstructorFee = () => {
           onClick={handleAddInstructor} 
           style={{ marginBottom: 16, height: '48px', fontSize: '15px', backgroundColor: '#38BDF8', color: '#12304A', fontWeight: 'bold', border: 'none' }}
         >
-          + 새 강사 추가하기
+          새 강사 추가하기
         </Button>
 
         <Table 
