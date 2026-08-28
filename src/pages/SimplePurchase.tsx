@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Card, Typography, Upload, Button, Table, InputNumber, Input, Row, Col, message, Tag, Tooltip, Modal, Divider } from 'antd';
-import { SaveOutlined, DownloadOutlined, PlusOutlined, MergeCellsOutlined } from '@ant-design/icons';
+import { Card, Typography, Upload, Button, Table, InputNumber, Input, Row, Col, message, Tag, Tooltip, Modal, Divider, Select } from 'antd';
+import { SaveOutlined, DownloadOutlined, PlusOutlined, MergeCellsOutlined, ClearOutlined } from '@ant-design/icons';
 import { DraftGeneratorModal } from '../components/DraftGeneratorModal';
 import { BudgetSelector } from '../components/BudgetSelector';
 import { extractItemsFromImage, extractItemsFromText } from '../lib/gemini';
@@ -13,12 +13,14 @@ import * as XLSX from 'xlsx';
 
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
+const { Option } = Select;
 
 interface RequestItem {
   id: string;
   item_name: string;
   specification: string;
   quantity: number;
+  original_price: number;
   unit_price: number;
   amount: number;
 }
@@ -43,6 +45,12 @@ export const SimplePurchase = () => {
   const [isTextScanning, setIsTextScanning] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
+  
+  // 넉넉한 품의 상태
+  const [marginMode, setMarginMode] = useState<'round_up' | 'percent' | 'fixed_total'>('round_up');
+  const [marginValue, setMarginValue] = useState<number | null>(null);
+  const [roundUnit, setRoundUnit] = useState<number>(100);
+
   const { fileList, uploadProps, previewUrl, getFiles } = useScanUpload();
   const { selectedItem } = useBudget();
   const guard = useDraftGuard();
@@ -83,7 +91,8 @@ export const SimplePurchase = () => {
       const orderPrice = toInt(item.order_price, 0);
 
       const rawUnitPrice = orderPrice / qty;
-      const unitPrice = Math.ceil((rawUnitPrice * 1.05) / 100) * 100;
+      // 기본은 100원 단위 올림 (가격 변동성 5% 할증은 marginMode='percent'에서 사용자가 선택하도록 변경)
+      const unitPrice = Math.ceil(rawUnitPrice / 100) * 100;
 
       const fee = toInt(item.shipping_fee, 0);
       if (fee > 0) totalShippingFee += fee;
@@ -93,6 +102,7 @@ export const SimplePurchase = () => {
         item_name: typeof item.name === 'string' && item.name ? item.name : '품명 미상',
         specification: typeof item.specification === 'string' ? item.specification : '',
         quantity: qty,
+        original_price: rawUnitPrice,
         unit_price: unitPrice,
         amount: qty * unitPrice,
       });
@@ -104,6 +114,7 @@ export const SimplePurchase = () => {
         item_name: '배송비',
         specification: '',
         quantity: 1,
+        original_price: totalShippingFee,
         unit_price: totalShippingFee,
         amount: totalShippingFee,
       });
@@ -111,6 +122,47 @@ export const SimplePurchase = () => {
 
     setItems(initializedItems);
     message.success('분석 결과를 바탕으로 표를 구성했습니다! 내역을 확인하고 수정해주세요.');
+  };
+
+  const handleApplyMargin = () => {
+    if (items.length === 0) return;
+    
+    setItems(items.map(item => {
+      if (item.item_name === '배송비') return item; // 배송비는 건드리지 않음
+      
+      let newPrice = item.original_price;
+      
+      if (marginMode === 'percent') {
+        const percent = marginValue || 5; // 기본 5%
+        newPrice = item.original_price * (1 + percent / 100);
+      } else if (marginMode === 'fixed_total') {
+        const totalFixed = marginValue || 0;
+        // 품목별 수량 무관하게 N개로 분할해서 얹어줌 (균등 배분)
+        newPrice = item.original_price + (totalFixed / items.length) / item.quantity;
+      }
+      
+      // 올림 처리
+      const finalPrice = Math.ceil(newPrice / roundUnit) * roundUnit;
+      
+      return {
+        ...item,
+        unit_price: finalPrice,
+        amount: finalPrice * item.quantity,
+      };
+    }));
+    
+    message.success('넉넉한 품의(여윳값)가 적용되었습니다.');
+  };
+
+  const handleClearAll = () => {
+    Modal.confirm({
+      title: '전체 초기화',
+      content: '추출된 모든 항목을 지우시겠습니까?',
+      okText: '초기화',
+      cancelText: '취소',
+      okButtonProps: { danger: true },
+      onOk: () => setItems([]),
+    });
   };
 
   const handleScan = async () => {
@@ -169,16 +221,22 @@ export const SimplePurchase = () => {
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const csv = XLSX.utils.sheet_to_csv(worksheet);
+          let combinedCsv = '';
+          workbook.SheetNames.forEach((sheetName) => {
+            const worksheet = workbook.Sheets[sheetName];
+            const sheetCsv = XLSX.utils.sheet_to_csv(worksheet);
+            if (sheetCsv.trim()) {
+              combinedCsv += `\n--- [시트: ${sheetName}] ---\n`;
+              combinedCsv += sheetCsv;
+            }
+          });
           
-          if (!csv.trim()) {
+          if (!combinedCsv.trim()) {
             message.warning('엑셀 파일에 데이터가 없습니다.');
             return;
           }
           
-          const parsedItems = await extractItemsFromText(csv);
+          const parsedItems = await extractItemsFromText(combinedCsv);
           processExtractedItems(parsedItems);
         } catch (error) {
           console.error(error);
@@ -197,7 +255,13 @@ export const SimplePurchase = () => {
     setItems(items.map(item => {
       if (item.id !== id) return item;
       const updated = { ...item, [field]: value };
-      if (field === 'quantity' || field === 'unit_price') {
+      
+      // 만약 현재 단가를 수동으로 고쳤다면 예상 단가도 일단 동기화해줌 (이후 넉넉한 품의 적용 가능)
+      if (field === 'original_price') {
+        updated.unit_price = updated.original_price;
+      }
+      
+      if (field === 'quantity' || field === 'unit_price' || field === 'original_price') {
         updated.amount = updated.quantity * updated.unit_price;
       }
       return updated;
@@ -210,6 +274,7 @@ export const SimplePurchase = () => {
       item_name: '',
       specification: '',
       quantity: 1,
+      original_price: 0,
       unit_price: 0,
       amount: 0,
     }]);
@@ -319,14 +384,26 @@ export const SimplePurchase = () => {
       ),
     },
     {
-      title: '단가(원)',
+      title: '단위',
+      dataIndex: 'unit',
+      render: () => <Text>개</Text>,
+    },
+    {
+      title: '현재 단가(원)',
+      dataIndex: 'original_price',
+      render: (val: number, record: RequestItem) => (
+        <InputNumber min={0} step={100} value={val} onChange={(v) => handleItemChange(record.id, 'original_price', v || 0)} style={{ width: '100px' }} />
+      ),
+    },
+    {
+      title: '예상 단가(원)',
       dataIndex: 'unit_price',
       render: (val: number, record: RequestItem) => (
         <InputNumber min={0} step={100} value={val} onChange={(v) => handleItemChange(record.id, 'unit_price', v || 0)} style={{ width: '100px' }} />
       ),
     },
     {
-      title: '항목 총액(원)',
+      title: '예상 금액(원)',
       dataIndex: 'amount',
       render: (val: number) => <Text strong>{val.toLocaleString()}원</Text>,
     },
@@ -446,15 +523,81 @@ export const SimplePurchase = () => {
           </Row>
         </div>
 
+        <Card style={{ marginBottom: 24, backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }} bodyStyle={{ padding: 24 }}>
+          <Title level={5} style={{ marginTop: 0, marginBottom: 4, color: '#1E3A8A' }}>넉넉한 품의</Title>
+          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+            실제 금액을 바탕으로 가격 변동 대비 예정금액을 자연스럽게 배분합니다.
+          </Text>
+          <Row gutter={[16, 16]} align="bottom">
+            <Col xs={24} sm={8} lg={6}>
+              <Text strong style={{ display: 'block', marginBottom: 8, fontSize: '13px' }}>여유 방식</Text>
+              <Select 
+                value={marginMode} 
+                onChange={(val) => setMarginMode(val)} 
+                style={{ width: '100%' }}
+                size="large"
+              >
+                <Option value="round_up">품목별 올림 (기본)</Option>
+                <Option value="percent">비율(%) 추가</Option>
+                <Option value="fixed_total">정액(원) 균등 추가</Option>
+              </Select>
+            </Col>
+            {marginMode !== 'round_up' && (
+              <Col xs={24} sm={8} lg={6}>
+                <Text strong style={{ display: 'block', marginBottom: 8, fontSize: '13px' }}>여윳값</Text>
+                <InputNumber 
+                  style={{ width: '100%' }} 
+                  size="large"
+                  min={0}
+                  placeholder={marginMode === 'percent' ? "예: 5 (%)" : "예: 5000 (원)"}
+                  value={marginValue} 
+                  onChange={(val) => setMarginValue(val)} 
+                />
+              </Col>
+            )}
+            <Col xs={24} sm={8} lg={6}>
+              <Text strong style={{ display: 'block', marginBottom: 8, fontSize: '13px' }}>올림 단위</Text>
+              <Select 
+                value={roundUnit} 
+                onChange={(val) => setRoundUnit(val)} 
+                style={{ width: '100%' }}
+                size="large"
+              >
+                <Option value={10}>10원</Option>
+                <Option value={100}>100원</Option>
+                <Option value={1000}>1000원</Option>
+              </Select>
+            </Col>
+            <Col xs={24} sm={24} lg={6}>
+              <Button type="primary" size="large" style={{ backgroundColor: '#1E3A8A' }} onClick={handleApplyMargin}>
+                ✓ 적용하기
+              </Button>
+            </Col>
+          </Row>
+        </Card>
+
         <Row>
           <Col xs={24}>
             <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <Text strong style={{ color: '#cf1322' }}>※ AI 추출 결과입니다. 내역을 확인하고 직접 수정하세요.</Text>
-              {mergeableCount > 0 && (
-                <Button size="small" icon={<MergeCellsOutlined />} onClick={handleMergeDuplicates}>
-                  중복 항목 합치기 ({mergeableCount}건)
+              <div>
+                <Title level={5} style={{ margin: 0 }}>품목내역</Title>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  ※ AI 추출 결과입니다. 내역을 확인하고 직접 수정하세요.
+                </Text>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {mergeableCount > 0 && (
+                  <Button icon={<MergeCellsOutlined />} onClick={handleMergeDuplicates}>
+                    중복 항목 합치기 ({mergeableCount}건)
+                  </Button>
+                )}
+                <Button type="dashed" onClick={handleAddRow} icon={<PlusOutlined />}>
+                  행 추가
                 </Button>
-              )}
+                <Button danger onClick={handleClearAll} icon={<ClearOutlined />} disabled={items.length === 0}>
+                  전체 초기화
+                </Button>
+              </div>
             </div>
 
             <Table
@@ -465,10 +608,7 @@ export const SimplePurchase = () => {
               bordered
               scroll={{ x: 900 }}
               footer={() => (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Button type="dashed" onClick={handleAddRow} icon={<PlusOutlined />} style={{ width: '150px' }}>
-                    수기 행 추가
-                  </Button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                   <Text strong style={{ fontSize: '16px' }}>총액: {totalAmount.toLocaleString()}원</Text>
                 </div>
               )}
