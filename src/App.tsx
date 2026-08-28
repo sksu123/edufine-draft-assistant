@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ConfigProvider, Layout, Typography, Menu, Button } from 'antd';
+import { ConfigProvider, Layout, Typography, Menu } from 'antd';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { ShoppingCartOutlined, UsergroupAddOutlined, FilePdfOutlined, SettingOutlined, WalletOutlined, ProfileOutlined } from '@ant-design/icons';
 import './index.css';
@@ -16,18 +16,22 @@ const { Title, Text } = Typography;
 
 const edufineTheme = {
   token: {
-    colorPrimary: '#337EA9', 
-    colorBgLayout: '#F7F6F3', 
-    colorTextBase: '#37352F', 
-    borderRadius: 6, 
-    fontFamily: '"Pretendard", "Noto Sans KR", sans-serif',
+    colorPrimary: '#0E7490', 
+    colorBgLayout: '#F7FCFF', 
+    colorBgContainer: '#EAF5FA',
+    colorTextBase: '#12304A', 
+    borderRadius: 14, 
+    fontFamily: '"Pretendard", sans-serif',
   },
   components: {
-    Layout: { headerBg: '#FFFFFF' },
+    Layout: { headerBg: '#EAF5FA' },
     Menu: {
-      darkItemBg: '#337EA9',
-      darkItemColor: '#FFFFFF',
-      darkItemSelectedBg: '#2a6a8f', 
+      darkItemBg: '#0E7490',
+      darkItemColor: '#F7FCFF',
+      darkItemSelectedBg: '#0b5a70', 
+    },
+    Card: {
+      boxShadowTertiary: '0 10px 28px rgba(18, 24, 38, 0.08)',
     }
   },
 };
