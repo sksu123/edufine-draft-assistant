@@ -1,0 +1,36 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 시크릿
+.env
+.env.*
+
+# 실제 학교 자료 (코드가 참조하지 않는 도메인 참고자료).
+# 실 예산·거래처·업무 문서라 저장소에 올리지 않는다. 로컬에는 그대로 두고 테스트에 쓴다.
+# 파일명 자체가 거래처를 드러낼 수 있어 개별 이름 대신 확장자로 막는다.
+*.pdf
+*.xls
+*.xlsx
+장바구니*.png

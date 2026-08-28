@@ -1,0 +1,28 @@
+:root {
+  --color-bg: #FFFFFF;
+  --color-surface: #F7F6F3;
+  --color-text: #37352F;
+  --color-primary: #337EA9;
+  --color-accent: #E9D8A6;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* 예산 관리: 가용 잔액이 음수인 행 */
+.budget-row-negative > td {
+  background-color: #fff1f0;
+}
