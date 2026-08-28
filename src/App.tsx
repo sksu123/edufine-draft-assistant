@@ -132,20 +132,34 @@ const MainLayout = () => {
         breakpoint="lg"
         collapsedWidth="0"
       >
-        <div style={{ padding: '24px', textAlign: 'center' }}>
-          <Title level={3} style={{ color: 'white', margin: 0, letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <PoomiIcon />
-            품의뚝딱
-          </Title>
-          <Text style={{ color: 'var(--color-accent)', fontSize: '13px' }}>어려운 품의, AI로 뚝딱!</Text>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div style={{ padding: '24px', textAlign: 'center' }}>
+            <Title level={3} style={{ color: 'white', margin: 0, letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <PoomiIcon />
+              품의뚝딱
+            </Title>
+            <Text style={{ color: 'var(--color-accent)', fontSize: '13px' }}>어려운 품의, AI로 뚝딱!</Text>
+          </div>
+          
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <Menu 
+              theme="dark" 
+              mode="inline" 
+              selectedKeys={[location.pathname]}
+              style={{ background: 'var(--color-primary)' }}
+              items={menuItems}
+            />
+          </div>
+          
+          <div style={{ padding: '24px 16px', textAlign: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>
+              Developed by 신경수(담양남초)
+            </Text>
+            <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '11px', display: 'block' }}>
+              &copy; 2026. All Rights Reserved.
+            </Text>
+          </div>
         </div>
-        <Menu 
-          theme="dark" 
-          mode="inline" 
-          selectedKeys={[location.pathname]}
-          style={{ background: 'var(--color-primary)' }}
-          items={menuItems}
-        />
       </Sider>
       
       <Layout>
