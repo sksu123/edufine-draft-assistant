@@ -421,17 +421,7 @@ export const SimplePurchase = () => {
       <BudgetSelector plannedAmount={totalAmount} />
       <Card
         title={
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-            <Title level={4} style={{ margin: 0, color: '#1E3A8A' }}>🛒 단순 물품 품의 자동화</Title>
-            <Button
-              type="primary"
-              icon={<DownloadOutlined />}
-              onClick={() => exportItemsToExcel(items)}
-              disabled={items.length === 0}
-            >
-              엑셀(.xlsx) 다운로드
-            </Button>
-          </div>
+          <Title level={4} style={{ margin: 0, color: '#1E3A8A' }}>🛒 단순 물품 품의 자동화</Title>
         }
         style={{ borderColor: '#1E3A8A' }}
       >
@@ -591,6 +581,15 @@ export const SimplePurchase = () => {
                     중복 항목 합치기 ({mergeableCount}건)
                   </Button>
                 )}
+                <Button
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  onClick={() => exportItemsToExcel(items)}
+                  disabled={items.length === 0}
+                  style={{ backgroundColor: '#0E7490' }}
+                >
+                  엑셀 다운로드
+                </Button>
                 <Button type="dashed" onClick={handleAddRow} icon={<PlusOutlined />}>
                   행 추가
                 </Button>

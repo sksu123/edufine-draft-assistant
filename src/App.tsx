@@ -115,10 +115,10 @@ const MainLayout = () => {
       type: 'group' as const,
       label: <span style={{ color: 'var(--color-accent)', fontSize: '12px' }}>⚙️ 설정</span>,
       children: [
-        { key: '/guide', icon: <ReadOutlined />, label: <Link to="/guide">사용설명서</Link> },
         { key: '/api-settings', icon: <SettingOutlined />, label: '학교 API 설정', onClick: () => setIsSettingsOpen(true) },
-        { key: '/templates', icon: <ProfileOutlined />, label: <Link to="/templates">템플릿 등록</Link> },
-        { key: '/rates', icon: <SettingOutlined />, label: <Link to="/rates">단가 설정</Link> },
+        { key: '/templates', icon: <ProfileOutlined />, label: <Link to="/templates">탬플릿 등록</Link> },
+        { key: '/rates', icon: <SettingOutlined />, label: <Link to="/rates">강사비/원고료 단가 조정</Link> },
+        { key: '/guide', icon: <ReadOutlined />, label: <Link to="/guide">사용설명서</Link> },
       ]
     }
   ];

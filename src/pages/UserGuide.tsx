@@ -49,9 +49,9 @@ export const UserGuide = () => {
         <Col xs={24} md={24}>
           <Card title={<><AppstoreAddOutlined style={{ color: '#0E7490' }}/> 세 가지 맞춤형 품의 유형</>} bordered={false}>
             <ul style={{ margin: 0, paddingLeft: 20, lineHeight: '2' }}>
-              <li><strong>단순 물품 품의:</strong> 쇼핑몰 장바구니 캡처를 스캔합니다. 같은 상품을 옵션만 다르게 담아도 AI가 똑똑하게 규격/옵션으로 분리해 줍니다.</li>
+              <li><strong>단순 물품 품의:</strong> 장바구니 캡처 스캔은 기본! 쇼핑몰 텍스트를 복사해서 붙여넣거나 여러 시트로 된 엑셀 파일을 던져주기만 해도 AI가 척척 분석합니다. 추가로 <strong>'넉넉한 품의'</strong> 기능을 통해 물가 변동을 대비한 여유 금액(올림, 비율 추가, 정액 추가)을 수량에 맞게 자동 배분하여 계산해 줍니다.</li>
               <li><strong>견적서 계약 품의:</strong> 견적서 PDF나 사진을 스캔합니다. 총액과 공급가액을 비교하여 <strong>부가세 포함/별도 여부까지 알아서 판별</strong>해 냅니다.</li>
-              <li><strong>강사비 지출 품의:</strong> 강사 등급별 수당 단가와 원고료 시간당 페이지 상한을 규칙에 맞게 자동 계산해 줍니다.</li>
+              <li><strong>강사비 지출 품의:</strong> 강사 등급별 수당 단가와 원고료 시간당 페이지 상한을 설정된 규칙에 맞게 자동 계산해 줍니다.</li>
             </ul>
           </Card>
         </Col>
@@ -64,7 +64,7 @@ export const UserGuide = () => {
         <Col xs={24} md={12}>
           <Card title={<><SettingOutlined style={{ color: '#0E7490' }}/> 나만의 맞춤 템플릿 등록</>} bordered={false} style={{ height: '100%' }}>
             자주 쓰는 품의 문구(목적, 장소, 대상 등)를 저장해두고 클릭 한 번에 불러오세요! 
-            우리 학교에 맞는 학년/학급 수나 단가 설정도 한 번만 맞춰두면 계속 편하게 쓸 수 있습니다.
+            우리 학교에 맞는 학년/학급 수나 강사비 단가 설정도 한 번만 맞춰두면 계속 편하게 쓸 수 있습니다.
           </Card>
         </Col>
       </Row>
@@ -80,12 +80,12 @@ export const UserGuide = () => {
               description: '왼쪽 ⚙️ 학교 API 설정 메뉴에서 학교 이름을 적고, 무료로 발급받은 Gemini API 키를 등록합니다. (구글 AI Studio에서 1분이면 발급 가능해요!)',
             },
             {
-              title: <Text strong style={{ fontSize: 16 }}>캡처하고 스캔하기</Text>,
-              description: '장바구니나 견적서 이미지를 화면에 올리거나 단축키(Ctrl+V)로 붙여넣고 [AI 스캔 시작] 버튼을 누릅니다.',
+              title: <Text strong style={{ fontSize: 16 }}>자료 넣고 분석하기</Text>,
+              description: '이미지 캡처를 올리거나, 텍스트 복사 붙여넣기, 엑셀 파일을 업로드한 뒤 [Gemini로 분석하기] 버튼을 누릅니다.',
             },
             {
-              title: <Text strong style={{ fontSize: 16 }}>확인하고 뚝딱!</Text>,
-              description: 'AI가 추출해 준 표를 눈으로 가볍게 확인하며 필요한 부분을 수정한 뒤, [엑셀 다운로드]와 [기안문 초안 작성하기] 버튼을 누르면 완성입니다!',
+              title: <Text strong style={{ fontSize: 16 }}>넉넉하게 계산하고 뚝딱!</Text>,
+              description: 'AI가 추출해 준 표를 가볍게 확인한 뒤, [넉넉한 품의]를 적용해 단가를 정리하고 [엑셀 다운로드]와 [기안문 초안 작성하기] 버튼을 누르면 완성입니다!',
             },
           ]}
         />

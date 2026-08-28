@@ -9,7 +9,7 @@ export interface RateItem {
 
 const RATES_KEY = 'draft_rates_v1';
 const MANUSCRIPT_RATES_KEY = 'draft_manuscript_rates_v1';
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 export interface RateState {
   instructorRates: RateItem[];
@@ -17,16 +17,24 @@ export interface RateState {
 }
 
 const SEED_INSTRUCTOR_RATES: RateItem[] = [
-  { id: '1', category: '특별강사 I', base_rate: 400000, excess_rate: 200000 },
-  { id: '2', category: '특별강사 II', base_rate: 300000, excess_rate: 150000 },
-  { id: '3', category: '일반강사 I', base_rate: 200000, excess_rate: 100000 },
-  { id: '4', category: '일반강사 II', base_rate: 150000, excess_rate: 70000 },
-  { id: '5', category: '일반강사 III (공직자 등)', base_rate: 120000, excess_rate: 0 },
+  { id: '1', category: '특별강사 I', base_rate: 300000, excess_rate: 200000 },
+  { id: '2', category: '특별강사 II', base_rate: 200000, excess_rate: 150000 },
+  { id: '3', category: '일반강사 I', base_rate: 160000, excess_rate: 90000 },
+  { id: '4', category: '일반강사 II', base_rate: 90000, excess_rate: 60000 },
+  { id: '5', category: '보조강사 (각종 실기실습)', base_rate: 40000, excess_rate: 40000 },
+  { id: '6', category: '보조강사 (전산 실기실습)', base_rate: 30000, excess_rate: 30000 },
+  { id: '7', category: '분임지도', base_rate: 30000, excess_rate: 30000 },
+  { id: '8', category: '원어민 보조교사', base_rate: 30000, excess_rate: 20000 },
+  { id: '9', category: '원격연수 튜터', base_rate: 40000, excess_rate: 40000 },
 ];
 
 const SEED_MANUSCRIPT_RATES: RateItem[] = [
-  { id: '1', category: 'A4 1매 기준', base_rate: 15000, excess_rate: 0 },
-  { id: '2', category: 'PPT 1매 기준', base_rate: 10000, excess_rate: 0 },
+  { id: '1', category: '원고료 (국문/외국어, 매당)', base_rate: 20000, excess_rate: 0 },
+  { id: '2', category: '파워포인트 (시간당 10매 미만)', base_rate: 30000, excess_rate: 0 },
+  { id: '3', category: '파워포인트 (시간당 10매 이상)', base_rate: 50000, excess_rate: 0 },
+  { id: '4', category: '슬라이드 제작료 (매당)', base_rate: 11000, excess_rate: 0 },
+  { id: '5', category: '슬라이드 제작료 (10분/40매)', base_rate: 110000, excess_rate: 0 },
+  { id: '6', category: '일러스트 삽화(사진) (매당)', base_rate: 30000, excess_rate: 0 },
 ];
 
 const readKey = <T,>(key: string, seed: T[]): T[] => {
